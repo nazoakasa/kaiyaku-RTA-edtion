@@ -18,6 +18,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow: hidden;
         }
         .game-container {
             display: flex;
@@ -33,8 +34,6 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
             position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
         }
         .sidebar {
             background: rgba(255,255,255,0.95);
@@ -42,8 +41,6 @@
             padding: 30px;
             width: 300px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-height: 90vh;
-            overflow-y: auto;
         }
         .timer {
             font-size: 48px;
@@ -174,49 +171,9 @@
             font-size: 24px;
             font-weight: bold;
             color: #333;
-            animation: pulseAnim 1s infinite;
+            animation: pulse 1s infinite;
         }
-        .people-list {
-            background: #ffe5e5;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
-            border: 2px solid #ff4757;
-        }
-        .people-list h3 {
-            color: #ff4757;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 20px;
-        }
-        .person-item {
-            padding: 10px;
-            margin: 8px 0;
-            background: white;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .person-emoji {
-            font-size: 24px;
-        }
-        .person-info {
-            flex: 1;
-        }
-        .person-name {
-            font-weight: bold;
-            color: #333;
-            font-size: 16px;
-        }
-        .person-reward {
-            color: #ff4757;
-            font-size: 14px;
-            margin-top: 3px;
-        }
-        @keyframes pulseAnim {
+        @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
@@ -302,7 +259,7 @@
             <div class="stats">
                 <div class="stat-item">
                     <span class="stat-label">現在ステップ</span>
-                    <span class="stat-value" id="currentStep">0/22</span>
+                    <span class="stat-value" id="currentStep">0/21</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">ミスクリック</span>
@@ -320,7 +277,7 @@
                 <div class="emoji">🎮</div>
                 <h1>解約阻止ゲーム - RTA Edition</h1>
                 <div class="message">
-                    22段階の解約阻止を突破してタイムを競おう！<br>
+                    21段階の解約阻止を突破してタイムを競おう！<br>
                     チェックポイント毎にラップタイムを記録します。<br><br>
                     <strong>目標タイム: 2分以内</strong>
                 </div>
@@ -338,7 +295,7 @@
                     <button class="stay-btn" id="stayBtn" onclick="recordMiss()">やっぱり続ける</button>
                     <button class="cancel-btn" id="cancelBtn" onclick="nextStep()">解約する</button>
                 </div>
-                <div class="progress" id="progress">ステップ 1/22</div>
+                <div class="progress" id="progress">ステップ 1/21</div>
             </div>
 
             <div id="resultScreen" class="result-screen" style="display: none;">
@@ -363,11 +320,11 @@
         
         const checkpoints = [
             { name: 'Tutorial', steps: [1, 2, 3] },
-            { name: 'Easy', steps: [4, 5, 6, 7, 8] },
-            { name: 'Normal', steps: [9, 10, 11, 12] },
-            { name: 'Hard', steps: [13, 14, 15, 16] },
-            { name: 'Expert', steps: [17, 18, 19] },
-            { name: 'Master', steps: [20, 21, 22] }
+            { name: 'Easy', steps: [4, 5, 6, 7] },
+            { name: 'Normal', steps: [8, 9, 10, 11] },
+            { name: 'Hard', steps: [12, 13, 14, 15] },
+            { name: 'Expert', steps: [16, 17, 18] },
+            { name: 'Master', steps: [19, 20, 21] }
         ];
 
         const steps = [
@@ -377,317 +334,7 @@
             { emoji: '😭', title: 'まだ早いです！', message: '私たちのサービスには、まだ使っていない機能がたくさんあります！', trick: 'hide' },
             { emoji: '😈', title: '最凶トラップ', message: 'クリックできるかな...？', trick: 'clickEscape' },
             { emoji: '💎', title: '限定特典進呈', message: 'プレミアム会員に無料アップグレードいたします！', discount: 'プレミアム無料', trick: 'doubleSwap' },
-            { emoji: '👨‍👩‍👧‍👦', title: '周りの人のことも...', message: 'あなたが解約すると、関係者全員の報酬がなくなります...', showPeople: true, trick: 'tiny' },
             { emoji: '🥺', title: 'お願いします...', message: 'あなたがいなくなったら、私たちはとても寂しいです...', trick: 'tiny' },
             { emoji: '💰', title: '最終オファー！', message: '3ヶ月間完全無料でご利用いただけます！', discount: '3ヶ月無料', trick: 'dodge' },
             { emoji: '🆘', title: '緊急事態！', message: 'あなたのアカウントには大切なデータが保存されています。本当に削除しますか？', trick: 'shake' },
-            { emoji: '🌟', title: '特別VIP待遇', message: '今すぐVIP会員になって、すべての機能を永久に無料でご利用ください！', discount: 'VIP永久無料', trick: 'invisible' },
-            { emoji: '💔', title: '最後のお願い', message: 'それでも本当に解約されますか...？', trick: 'spin' },
-            { emoji: '🎯', title: '超限定オファー', message: '今だけ年間プラン90%OFF！', discount: '90% OFF', trick: 'multipleButtons' },
-            { emoji: '😱', title: 'ちょっと待って！', message: 'まだ伝えていない特典があります！', trick: 'moveAway' },
-            { emoji: '🎪', title: '驚きの特典', message: '全機能無制限プレミアム！', discount: '無制限プラン', trick: 'fastMove' },
-            { emoji: '🚀', title: '信じられない！', message: 'これ以上の条件はありません！', trick: 'superTiny' },
-            { emoji: '💝', title: '感謝の気持ち', message: 'あなたは特別なお客様です', trick: 'hideAndSeek' },
-            { emoji: '🎉', title: 'ラストチャンス', message: '人生最後のチャンスかも...', discount: '全部無料', trick: 'crazyMove' },
-            { emoji: '😇', title: '神オファー', message: 'もはや無料を超えた何か', trick: 'rotate' },
-            { emoji: '🌈', title: '奇跡の提案', message: '使えば使うほどポイント還元！', trick: 'flash' },
-            { emoji: '⭐', title: '最終形態', message: 'これが最後です...本当に...', trick: 'chaos' },
-            { emoji: '💫', title: '究極の選択', message: '後悔しませんか？', trick: 'ultimate' }
-        ];
-
-        const cancelBtn = document.getElementById('cancelBtn');
-        const stayBtn = document.getElementById('stayBtn');
-        const container = document.getElementById('btnContainer');
-
-        function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'block';
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 10);
-            initCheckpoints();
-            applyTrick(steps[0].trick);
-        }
-
-        function updateTimer() {
-            const elapsed = Date.now() - startTime;
-            const minutes = Math.floor(elapsed / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            const milliseconds = elapsed % 1000;
-            document.getElementById('timer').textContent = 
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
-        }
-
-        function initCheckpoints() {
-            const checkpointsDiv = document.getElementById('checkpoints');
-            checkpointsDiv.innerHTML = '';
-            checkpoints.forEach((cp, idx) => {
-                const div = document.createElement('div');
-                div.className = 'checkpoint';
-                div.id = `checkpoint-${idx}`;
-                div.innerHTML = `
-                    <span class="checkpoint-name">${cp.name}</span>
-                    <span class="checkpoint-time">--:--.---</span>
-                `;
-                checkpointsDiv.appendChild(div);
-            });
-            document.getElementById('checkpoint-0').classList.add('current');
-        }
-
-        function updateCheckpoint() {
-            const currentCheckpointIdx = checkpoints.findIndex(cp => 
-                cp.steps.includes(step)
-            );
-            
-            if (currentCheckpointIdx !== -1) {
-                const prevCheckpointIdx = checkpoints.findIndex(cp => 
-                    cp.steps.includes(step - 1)
-                );
-                
-                if (prevCheckpointIdx !== currentCheckpointIdx && prevCheckpointIdx !== -1) {
-                    const elapsed = Date.now() - startTime;
-                    const minutes = Math.floor(elapsed / 60000);
-                    const seconds = Math.floor((elapsed % 60000) / 1000);
-                    const milliseconds = elapsed % 1000;
-                    const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
-                    
-                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).classList.remove('current');
-                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).classList.add('completed');
-                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).querySelector('.checkpoint-time').textContent = timeStr;
-                    checkpointTimes.push(elapsed);
-                }
-                
-                document.getElementById(`checkpoint-${currentCheckpointIdx}`).classList.add('current');
-            }
-        }
-
-        function recordMiss() {
-            missCount++;
-            document.getElementById('missCount').textContent = missCount;
-        }
-
-        function clearTricks() {
-            cancelBtn.style = '';
-            stayBtn.style = '';
-            cancelBtn.onmouseenter = null;
-            cancelBtn.onmousemove = null;
-            cancelBtn.onmousedown = null;
-            cancelBtn.onclick = () => nextStep();
-            container.style = '';
-            document.querySelectorAll('.fake-btn').forEach(btn => btn.remove());
-            dodgeCount = 0;
-            escapeCount = 0;
-        }
-
-        function applyTrick(trick) {
-            clearTricks();
-            
-            switch(trick) {
-                case 'swap':
-                    container.style.flexDirection = 'row-reverse';
-                    break;
-                
-                case 'shrink':
-                    cancelBtn.style.padding = '5px 10px';
-                    cancelBtn.style.fontSize = '10px';
-                    stayBtn.style.padding = '20px 60px';
-                    stayBtn.style.fontSize = '20px';
-                    break;
-                
-                case 'move':
-                    cancelBtn.onmouseenter = () => {
-                        const x = Math.random() * 300 - 150;
-                        const y = Math.random() * 150 - 75;
-                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                    };
-                    break;
-                
-                case 'hide':
-                    cancelBtn.style.opacity = '0.05';
-                    cancelBtn.onmouseenter = () => cancelBtn.style.opacity = '0.2';
-                    cancelBtn.onmouseleave = () => cancelBtn.style.opacity = '0.05';
-                    break;
-                
-                case 'clickEscape':
-                    cancelBtn.onmousedown = (e) => {
-                        if (escapeCount < 2) {
-                            e.preventDefault();
-                            const x = (escapeCount + 1) * 150 * (Math.random() > 0.5 ? 1 : -1);
-                            const y = (escapeCount + 1) * 80 * (Math.random() > 0.5 ? 1 : -1);
-                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                            cancelBtn.style.position = 'absolute';
-                            escapeCount++;
-                            
-                            cancelBtn.style.transition = 'transform 0.2s ease-out';
-                            setTimeout(() => {
-                                cancelBtn.style.transition = 'all 0.3s';
-                            }, 200);
-                            
-                            return false;
-                        } else if (escapeCount === 2) {
-                            e.preventDefault();
-                            container.style.flexDirection = container.style.flexDirection === 'row-reverse' ? 'row' : 'row-reverse';
-                            cancelBtn.style.transform = '';
-                            cancelBtn.style.position = 'relative';
-                            cancelBtn.style.background = '#ff0000';
-                            cancelBtn.textContent = '解約する（本物）';
-                            stayBtn.style.background = '#ff4757';
-                            stayBtn.textContent = 'これは解約ボタン';
-                            escapeCount++;
-                            return false;
-                        }
-                    };
-                    cancelBtn.style.cursor = 'pointer';
-                    break;
-                
-                case 'doubleSwap':
-                    container.style.flexDirection = 'row-reverse';
-                    cancelBtn.style.padding = '8px 15px';
-                    cancelBtn.style.fontSize = '12px';
-                    break;
-                
-                case 'tiny':
-                    cancelBtn.style.padding = '2px 4px';
-                    cancelBtn.style.fontSize = '6px';
-                    stayBtn.style.padding = '30px 100px';
-                    stayBtn.style.fontSize = '28px';
-                    break;
-                
-                case 'dodge':
-                    cancelBtn.onmousemove = (e) => {
-                        if (dodgeCount < 5) {
-                            const x = Math.random() * 400 - 200;
-                            const y = Math.random() * 200 - 100;
-                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                            cancelBtn.style.position = 'absolute';
-                            dodgeCount++;
-                        }
-                    };
-                    break;
-                
-                case 'shake':
-                    cancelBtn.style.animation = 'shake 0.3s infinite';
-                    cancelBtn.style.fontSize = '10px';
-                    break;
-                
-                case 'invisible':
-                    cancelBtn.style.background = '#fefefe';
-                    cancelBtn.style.color = '#fafafa';
-                    cancelBtn.style.border = '1px solid #f9f9f9';
-                    cancelBtn.style.padding = '3px 6px';
-                    cancelBtn.style.fontSize = '7px';
-                    break;
-                
-                case 'spin':
-                    cancelBtn.style.animation = 'spin 2s linear infinite';
-                    container.style.flexDirection = 'row-reverse';
-                    break;
-                
-                case 'multipleButtons':
-                    for (let i = 0; i < 5; i++) {
-                        const fake = document.createElement('button');
-                        fake.className = 'fake-btn';
-                        fake.textContent = '解約する';
-                        fake.style.left = `${Math.random() * 80}%`;
-                        fake.style.top = `${Math.random() * 50}px`;
-                        fake.onclick = () => fake.remove();
-                        container.appendChild(fake);
-                    }
-                    cancelBtn.style.padding = '5px 10px';
-                    cancelBtn.style.fontSize = '9px';
-                    break;
-                
-                case 'moveAway':
-                    cancelBtn.onmousemove = () => {
-                        const x = Math.random() * 500 - 250;
-                        const y = Math.random() * 300 - 150;
-                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                        cancelBtn.style.position = 'absolute';
-                    };
-                    cancelBtn.style.padding = '4px 8px';
-                    cancelBtn.style.fontSize = '8px';
-                    break;
-                
-                case 'fastMove':
-                    cancelBtn.style.animation = 'float 0.5s infinite';
-                    cancelBtn.onmouseenter = () => {
-                        const x = Math.random() * 600 - 300;
-                        const y = Math.random() * 400 - 200;
-                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                        cancelBtn.style.position = 'absolute';
-                    };
-                    break;
-                
-                case 'superTiny':
-                    cancelBtn.style.padding = '1px 2px';
-                    cancelBtn.style.fontSize = '4px';
-                    cancelBtn.style.opacity = '0.3';
-                    container.style.flexDirection = 'row-reverse';
-                    break;
-                
-                case 'hideAndSeek':
-                    let blinkInterval = setInterval(() => {
-                        cancelBtn.style.opacity = cancelBtn.style.opacity === '0.1' ? '1' : '0.1';
-                    }, 600);
-                    cancelBtn.onclick = () => {
-                        clearInterval(blinkInterval);
-                        nextStep();
-                    };
-                    cancelBtn.style.padding = '10px 20px';
-                    cancelBtn.style.fontSize = '14px';
-                    break;
-                
-                case 'crazyMove':
-                    let moveInterval = setInterval(() => {
-                        const x = Math.random() * 400 - 200;
-                        const y = Math.random() * 200 - 100;
-                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                        cancelBtn.style.position = 'absolute';
-                    }, 800);
-                    cancelBtn.onclick = () => {
-                        clearInterval(moveInterval);
-                        nextStep();
-                    };
-                    cancelBtn.style.padding = '8px 15px';
-                    cancelBtn.style.fontSize = '12px';
-                    break;
-                
-                case 'rotate':
-                    cancelBtn.style.animation = 'spin 1s linear infinite';
-                    cancelBtn.style.padding = '4px 7px';
-                    cancelBtn.style.fontSize = '7px';
-                    cancelBtn.style.opacity = '0.4';
-                    container.style.flexDirection = 'row-reverse';
-                    break;
-                
-                case 'flash':
-                    setInterval(() => {
-                        cancelBtn.style.display = cancelBtn.style.display === 'none' ? 'block' : 'none';
-                    }, 200);
-                    break;
-                
-                case 'chaos':
-                    for (let i = 0; i < 5; i++) {
-                        const fake = document.createElement('button');
-                        fake.className = 'fake-btn';
-                        fake.textContent = '解約';
-                        fake.style.left = `${Math.random() * 90}%`;
-                        fake.style.top = `${Math.random() * 80}px`;
-                        fake.style.padding = '8px 12px';
-                        fake.style.fontSize = '12px';
-                        fake.onclick = () => fake.remove();
-                        container.appendChild(fake);
-                    }
-                    cancelBtn.style.padding = '8px 12px';
-                    cancelBtn.style.fontSize = '12px';
-                    cancelBtn.style.opacity = '0.8';
-                    break;
-                
-                case 'ultimate':
-                    cancelBtn.onmousemove = (e) => {
-                        if (dodgeCount < 3) {
-                            const x = Math.random() * 400 - 200;
-                            const y = Math.random() * 200 - 100;
-                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
-                            cancelBtn.style.position = 'absolute';
-                            dodgeCount++;
-                        } else {
+            { emoji: '🌟', title: '特別VIP待

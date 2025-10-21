@@ -521,4 +521,218 @@
                     break;
                 
                 case 'invisible':
-                  
+                    cancelBtn.style.background = '#fefefe';
+                    cancelBtn.style.color = '#fafafa';
+                    cancelBtn.style.border = '1px solid #f9f9f9';
+                    cancelBtn.style.padding = '3px 6px';
+                    cancelBtn.style.fontSize = '7px';
+                    break;
+                
+                case 'spin':
+                    cancelBtn.style.animation = 'spin 2s linear infinite';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'multipleButtons':
+                    for (let i = 0; i < 5; i++) {
+                        const fake = document.createElement('button');
+                        fake.className = 'fake-btn';
+                        fake.textContent = '解約する';
+                        fake.style.left = `${Math.random() * 80}%`;
+                        fake.style.top = `${Math.random() * 50}px`;
+                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        container.appendChild(fake);
+                    }
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '9px';
+                    break;
+                
+                case 'moveAway':
+                    cancelBtn.onmousemove = () => {
+                        const x = Math.random() * 500 - 250;
+                        const y = Math.random() * 300 - 150;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    };
+                    cancelBtn.style.padding = '4px 8px';
+                    cancelBtn.style.fontSize = '8px';
+                    break;
+                
+                case 'fastMove':
+                    cancelBtn.style.animation = 'float 0.5s infinite';
+                    cancelBtn.onmouseenter = () => {
+                        const x = Math.random() * 600 - 300;
+                        const y = Math.random() * 400 - 200;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    };
+                    break;
+                
+                case 'superTiny':
+                    cancelBtn.style.padding = '1px 2px';
+                    cancelBtn.style.fontSize = '4px';
+                    cancelBtn.style.opacity = '0.3';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'hideAndSeek':
+                    let blinkInterval = setInterval(() => {
+                        cancelBtn.style.opacity = cancelBtn.style.opacity === '0.1' ? '1' : '0.1';
+                    }, 600);
+                    cancelBtn.onclick = () => {
+                        clearInterval(blinkInterval);
+                        nextStep();
+                    };
+                    cancelBtn.style.padding = '10px 20px';
+                    cancelBtn.style.fontSize = '14px';
+                    break;
+                
+                case 'crazyMove':
+                    let moveInterval = setInterval(() => {
+                        const x = Math.random() * 400 - 200;
+                        const y = Math.random() * 200 - 100;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    }, 800);
+                    cancelBtn.onclick = () => {
+                        clearInterval(moveInterval);
+                        nextStep();
+                    };
+                    cancelBtn.style.padding = '8px 15px';
+                    cancelBtn.style.fontSize = '12px';
+                    break;
+                
+                case 'rotate':
+                    cancelBtn.style.animation = 'spin 1s linear infinite';
+                    cancelBtn.style.padding = '4px 7px';
+                    cancelBtn.style.fontSize = '7px';
+                    cancelBtn.style.opacity = '0.4';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'flash':
+                    setInterval(() => {
+                        cancelBtn.style.display = cancelBtn.style.display === 'none' ? 'block' : 'none';
+                    }, 200);
+                    break;
+                
+                case 'chaos':
+                    for (let i = 0; i < 5; i++) {
+                        const fake = document.createElement('button');
+                        fake.className = 'fake-btn';
+                        fake.textContent = '解約';
+                        fake.style.left = `${Math.random() * 90}%`;
+                        fake.style.top = `${Math.random() * 80}px`;
+                        fake.style.padding = '8px 12px';
+                        fake.style.fontSize = '12px';
+                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        container.appendChild(fake);
+                    }
+                    cancelBtn.style.padding = '8px 12px';
+                    cancelBtn.style.fontSize = '12px';
+                    cancelBtn.style.opacity = '0.8';
+                    break;
+                
+                case 'ultimate':
+                    cancelBtn.onmousemove = (e) => {
+                        if (dodgeCount < 3) {
+                            const x = Math.random() * 400 - 200;
+                            const y = Math.random() * 200 - 100;
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            dodgeCount++;
+                        } else {
+                            cancelBtn.style.padding = '10px 20px';
+                            cancelBtn.style.fontSize = '14px';
+                            cancelBtn.style.opacity = '1';
+                            cancelBtn.style.background = '#ff4757';
+                            cancelBtn.onmousemove = null;
+                        }
+                    };
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '10px';
+                    cancelBtn.style.opacity = '0.6';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+            }
+        }
+
+        function nextStep() {
+            if (step >= 21) {
+                finishGame();
+                return;
+            }
+
+            checkCheckpoint();
+
+            const currentStep = steps[step];
+            document.getElementById('emoji').textContent = currentStep.emoji;
+            document.getElementById('title').textContent = currentStep.title;
+            document.getElementById('message').textContent = currentStep.message;
+            
+            if (currentStep.discount) {
+                document.getElementById('extra-content').innerHTML = 
+                    `<div class="discount">${currentStep.discount}</div>`;
+            } else {
+                document.getElementById('extra-content').innerHTML = '';
+            }
+
+            applyTrick(currentStep.trick);
+
+            step++;
+            updateStats();
+            document.getElementById('progress').textContent = `ステップ ${step}/21`;
+        }
+
+        function finishGame() {
+            clearInterval(timerInterval);
+            clearTricks();
+            
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            
+            const finalTime = Date.now() - startTime;
+            const minutes = Math.floor(finalTime / 60000);
+            const seconds = Math.floor((finalTime % 60000) / 1000);
+            const ms = finalTime % 1000;
+            const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+            
+            document.getElementById('finalTime').textContent = timeStr;
+            
+            // ランク判定
+            let rank = '';
+            let message = '';
+            if (finalTime < 60000) {
+                rank = '🏆 SS RANK';
+                message = '神業！世界記録級のタイムです！';
+            } else if (finalTime < 90000) {
+                rank = '🥇 S RANK';
+                message = '素晴らしい！完璧なプレイです！';
+            } else if (finalTime < 120000) {
+                rank = '🥈 A RANK';
+                message = 'すごい！目標タイムクリア！';
+            } else if (finalTime < 180000) {
+                rank = '🥉 B RANK';
+                message = 'いい感じ！もう少しで目標達成！';
+            } else if (finalTime < 240000) {
+                rank = '📝 C RANK';
+                message = 'クリアおめでとう！練習あるのみ！';
+            } else {
+                rank = '🐢 D RANK';
+                message = 'クリアできました！次はもっと早く！';
+            }
+            
+            if (missCount > 10) {
+                message += `<br><small>ミスクリック: ${missCount}回 (落ち着いてプレイしよう！)</small>`;
+            } else if (missCount > 5) {
+                message += `<br><small>ミスクリック: ${missCount}回</small>`;
+            } else if (missCount === 0) {
+                message += `<br><small>✨ノーミスクリア！完璧です！</small>`;
+            }
+            
+            document.getElementById('rank').textContent = rank;
+            document.getElementById('resultMessage').innerHTML = message;
+        }
+    </script>
+</body>
+</html>

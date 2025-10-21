@@ -1,180 +1,743 @@
-// server.js
-const express = require('express');
-const cors = require('cors');
-const crypto = require('crypto');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解約阻止ゲーム - RTA Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .game-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            flex: 1;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            position: relative;
+        }
+        .sidebar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            width: 300px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff4757;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .checkpoint-section {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .checkpoint-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .checkpoint {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .checkpoint.completed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .checkpoint.current {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            animation: pulse 1s infinite;
+        }
+        .checkpoint-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .checkpoint-time {
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+        .stats {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .stat-label {
+            color: #666;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .message {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .btn-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            position: relative;
+            min-height: 100px;
+        }
+        button {
+            padding: 15px 40px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            position: relative;
+        }
+        .cancel-btn {
+            background: #ff4757;
+            color: white;
+        }
+        .stay-btn {
+            background: #2ecc71;
+            color: white;
+        }
+        .stay-btn:hover {
+            background: #27ae60;
+            transform: scale(1.05);
+        }
+        .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .progress {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #999;
+        }
+        .discount {
+            background: #ffd93d;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+        .fake-btn {
+            position: absolute;
+            padding: 15px 40px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            background: #ff4757;
+            color: white;
+            opacity: 0.8;
+        }
+        .start-screen {
+            text-align: center;
+        }
+        .start-btn {
+            padding: 20px 60px;
+            font-size: 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+        .start-btn:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+        .result-screen {
+            text-align: center;
+        }
+        .final-time {
+            font-size: 64px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .rank {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        .restart-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .restart-btn:hover {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sidebar">
+            <div class="timer" id="timer">00:00.000</div>
+            <div class="checkpoint-section">
+                <div class="checkpoint-title">📍 チェックポイント</div>
+                <div id="checkpoints"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">現在ステップ</span>
+                    <span class="stat-value" id="currentStep">0/21</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ミスクリック</span>
+                    <span class="stat-value" id="missCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">目標タイム</span>
+                    <span class="stat-value">02:00.000</span>
+                </div>
+            </div>
+        </div>
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+        <div class="container">
+            <div id="startScreen" class="start-screen">
+                <div class="emoji">🎮</div>
+                <h1>解約阻止ゲーム - RTA Edition</h1>
+                <div class="message">
+                    21段階の解約阻止を突破してタイムを競おう！<br>
+                    チェックポイント毎にラップタイムを記録します。<br><br>
+                    <strong>目標タイム: 2分以内</strong>
+                </div>
+                <button class="start-btn" onclick="startGame()">🚀 ゲームスタート</button>
+            </div>
 
-// メモリ内ストレージ（本番環境ではデータベースを使用）
-const leaderboard = [];
-const sessions = new Map();
-const rateLimit = new Map();
+            <div id="gameScreen" style="display: none;">
+                <div class="emoji" id="emoji">😊</div>
+                <h1 id="title">解約手続き</h1>
+                <div class="message" id="message">
+                    本当に解約してもよろしいですか?
+                </div>
+                <div id="extra-content"></div>
+                <div class="btn-container" id="btnContainer">
+                    <button class="stay-btn" id="stayBtn" onclick="recordMiss()">やっぱり続ける</button>
+                    <button class="cancel-btn" id="cancelBtn" onclick="nextStep()">解約する</button>
+                </div>
+                <div class="progress" id="progress">ステップ 1/21</div>
+            </div>
 
-app.use(cors());
-app.use(express.json());
+            <div id="resultScreen" class="result-screen" style="display: none;">
+                <div class="emoji">🎉</div>
+                <h1>クリア！</h1>
+                <div class="final-time" id="finalTime">00:00.000</div>
+                <div class="rank" id="rank">🥇 S RANK</div>
+                <div class="message" id="resultMessage">素晴らしいタイムです！</div>
+                <button class="restart-btn" onclick="location.reload()">もう一度挑戦</button>
+            </div>
+        </div>
+    </div>
 
-// セッション生成用のシークレット
-const SECRET = process.env.SECRET_KEY || 'change-this-in-production';
+    <script>
+        let step = 1;
+        let dodgeCount = 0;
+        let escapeCount = 0;
+        let startTime = 0;
+        let timerInterval = null;
+        let missCount = 0;
+        let checkpointTimes = [];
+        let sessionToken = null;
+        let serverStartTime = null;
+        
+        const API_URL = 'https://your-app.onrender.com'; // Renderのデプロイ後のURLに変更
+        const SECRET = 'change-this-in-production'; // サーバーと同じシークレット
+        
+        const checkpoints = [
+            { name: 'Tutorial', steps: [1, 2, 3] },
+            { name: 'Easy', steps: [4, 5, 6, 7] },
+            { name: 'Normal', steps: [8, 9, 10, 11] },
+            { name: 'Hard', steps: [12, 13, 14, 15] },
+            { name: 'Expert', steps: [16, 17, 18] },
+            { name: 'Master', steps: [19, 20, 21] }
+        ];
 
-// セッショントークン生成
-function generateSessionToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
+        const steps = [
+            { emoji: '😊', title: '解約手続き', message: '本当に解約してもよろしいですか?', trick: 'swap' },
+            { emoji: '😢', title: 'お待ちください！', message: 'これまで一緒に過ごした時間を思い出してください...', trick: 'shrink' },
+            { emoji: '🎁', title: '特別オファー！', message: '今なら50%オフでご利用いただけます！', discount: '50% OFF', trick: 'move' },
+            { emoji: '😭', title: 'まだ早いです！', message: '私たちのサービスには、まだ使っていない機能がたくさんあります！', trick: 'hide' },
+            { emoji: '😈', title: '最凶トラップ', message: 'クリックできるかな...？', trick: 'clickEscape' },
+            { emoji: '💎', title: '限定特典進呈', message: 'プレミアム会員に無料アップグレードいたします！', discount: 'プレミアム無料', trick: 'doubleSwap' },
+            { emoji: '🥺', title: 'お願いします...', message: 'あなたがいなくなったら、私たちはとても寂しいです...', trick: 'tiny' },
+            { emoji: '💰', title: '最終オファー！', message: '3ヶ月間完全無料でご利用いただけます！', discount: '3ヶ月無料', trick: 'dodge' },
+            { emoji: '🆘', title: '緊急事態！', message: 'あなたのアカウントには大切なデータが保存されています。本当に削除しますか？', trick: 'shake' },
+            { emoji: '🌟', title: '特別VIP待遇', message: '今すぐVIP会員になって、すべての機能を永久に無料でご利用ください！', discount: 'VIP永久無料', trick: 'invisible' },
+            { emoji: '💔', title: '最後のお願い', message: 'それでも本当に解約されますか...？', trick: 'spin' },
+            { emoji: '🎯', title: '超限定オファー', message: '今だけ年間プラン90%OFF！', discount: '90% OFF', trick: 'multipleButtons' },
+            { emoji: '😱', title: 'ちょっと待って！', message: 'まだ伝えていない特典があります！', trick: 'moveAway' },
+            { emoji: '🎪', title: '驚きの特典', message: '全機能無制限プレミアム！', discount: '無制限プラン', trick: 'fastMove' },
+            { emoji: '🚀', title: '信じられない！', message: 'これ以上の条件はありません！', trick: 'superTiny' },
+            { emoji: '💝', title: '感謝の気持ち', message: 'あなたは特別なお客様です', trick: 'hideAndSeek' },
+            { emoji: '🎉', title: 'ラストチャンス', message: '人生最後のチャンスかも...', discount: '全部無料', trick: 'crazyMove' },
+            { emoji: '😇', title: '神オファー', message: 'もはや無料を超えた何か', trick: 'rotate' },
+            { emoji: '🌈', title: '奇跡の提案', message: '使えば使うほどポイント還元！', trick: 'flash' },
+            { emoji: '⭐', title: '最終形態', message: 'これが最後です...本当に...', trick: 'chaos' },
+            { emoji: '💫', title: '究極の選択', message: '後悔しませんか？', trick: 'ultimate' }
+        ];
 
-// HMAC署名生成
-function generateSignature(data, secret) {
-  return crypto.createHmac('sha256', secret)
-    .update(JSON.stringify(data))
-    .digest('hex');
-}
+        const cancelBtn = document.getElementById('cancelBtn');
+        const stayBtn = document.getElementById('stayBtn');
+        const container = document.getElementById('btnContainer');
 
-// レート制限チェック
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const record = rateLimit.get(ip) || { count: 0, resetTime: now + 3600000 };
-  
-  if (now > record.resetTime) {
-    record.count = 0;
-    record.resetTime = now + 3600000;
-  }
-  
-  if (record.count >= 10) {
-    return false;
-  }
-  
-  record.count++;
-  rateLimit.set(ip, record);
-  return true;
-}
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 10);
+            initCheckpoints();
+            updateStats();
+        }
 
-// ゲーム開始エンドポイント
-app.post('/api/start-session', (req, res) => {
-  const ip = req.ip;
-  
-  if (!checkRateLimit(ip)) {
-    return res.status(429).json({ error: 'Too many requests' });
-  }
-  
-  const sessionToken = generateSessionToken();
-  const startTime = Date.now();
-  
-  sessions.set(sessionToken, {
-    startTime,
-    ip,
-    completed: false
-  });
-  
-  // 10分後に自動削除
-  setTimeout(() => sessions.delete(sessionToken), 600000);
-  
-  res.json({ sessionToken, startTime });
-});
+        function initCheckpoints() {
+            const checkpointDiv = document.getElementById('checkpoints');
+            checkpoints.forEach((cp, idx) => {
+                const div = document.createElement('div');
+                div.className = 'checkpoint';
+                div.id = `checkpoint-${idx}`;
+                div.innerHTML = `
+                    <span class="checkpoint-name">${cp.name}</span>
+                    <span class="checkpoint-time">--:--.---</span>
+                `;
+                checkpointDiv.appendChild(div);
+            });
+            document.getElementById('checkpoint-0').classList.add('current');
+        }
 
-// スコア送信エンドポイント
-app.post('/api/submit-score', (req, res) => {
-  const { sessionToken, playerName, finalTime, missCount, checkpoints, signature } = req.body;
-  
-  // バリデーション
-  if (!sessionToken || !playerName || finalTime === undefined || !signature) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  
-  // セッション検証
-  const session = sessions.get(sessionToken);
-  if (!session) {
-    return res.status(401).json({ error: 'Invalid or expired session' });
-  }
-  
-  if (session.completed) {
-    return res.status(400).json({ error: 'Session already used' });
-  }
-  
-  // 署名検証
-  const dataToSign = {
-    sessionToken,
-    playerName,
-    finalTime,
-    missCount,
-    checkpoints
-  };
-  const expectedSignature = generateSignature(dataToSign, SECRET);
-  
-  if (signature !== expectedSignature) {
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
-  
-  // タイム検証
-  const serverElapsed = Date.now() - session.startTime;
-  const timeDiff = Math.abs(serverElapsed - finalTime);
-  
-  // サーバータイムとの差が10秒以上ある場合は不正
-  if (timeDiff > 10000) {
-    return res.status(400).json({ error: 'Time mismatch detected' });
-  }
-  
-  // 異常に速いタイム（30秒未満）は疑わしい
-  if (finalTime < 30000) {
-    return res.status(400).json({ error: 'Suspicious time detected' });
-  }
-  
-  // プレイヤー名のバリデーション
-  if (playerName.length > 20 || playerName.length < 1) {
-    return res.status(400).json({ error: 'Invalid player name length' });
-  }
-  
-  // セッションを完了としてマーク
-  session.completed = true;
-  
-  // スコアを保存
-  const score = {
-    id: crypto.randomBytes(8).toString('hex'),
-    playerName: playerName.substring(0, 20), // サニタイズ
-    finalTime,
-    missCount: missCount || 0,
-    checkpoints: checkpoints || [],
-    timestamp: new Date().toISOString(),
-    ip: session.ip // ログ用（表示はしない）
-  };
-  
-  leaderboard.push(score);
-  
-  // ソートして上位100件のみ保持
-  leaderboard.sort((a, b) => a.finalTime - b.finalTime);
-  if (leaderboard.length > 100) {
-    leaderboard.length = 100;
-  }
-  
-  // ランキングを返す
-  const rank = leaderboard.findIndex(s => s.id === score.id) + 1;
-  
-  res.json({
-    success: true,
-    rank,
-    totalPlayers: leaderboard.length
-  });
-});
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const ms = elapsed % 1000;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+        }
 
-// リーダーボード取得エンドポイント
-app.get('/api/leaderboard', (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
-  
-  const publicLeaderboard = leaderboard.slice(0, limit).map((score, index) => ({
-    rank: index + 1,
-    playerName: score.playerName,
-    finalTime: score.finalTime,
-    missCount: score.missCount,
-    timestamp: score.timestamp
-  }));
-  
-  res.json(publicLeaderboard);
-});
+        function updateStats() {
+            document.getElementById('currentStep').textContent = `${step}/21`;
+            document.getElementById('missCount').textContent = missCount;
+        }
 
-// ヘルスチェック
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', sessions: sessions.size, scores: leaderboard.length });
-});
+        function recordMiss() {
+            missCount++;
+            updateStats();
+        }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+        function checkCheckpoint() {
+            checkpoints.forEach((cp, idx) => {
+                if (cp.steps.includes(step)) {
+                    const cpDiv = document.getElementById(`checkpoint-${idx}`);
+                    if (!cpDiv.classList.contains('completed')) {
+                        cpDiv.classList.remove('current');
+                        cpDiv.classList.add('completed');
+                        const elapsed = Date.now() - startTime;
+                        const minutes = Math.floor(elapsed / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                        const ms = elapsed % 1000;
+                        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+                        cpDiv.querySelector('.checkpoint-time').textContent = timeStr;
+                        checkpointTimes.push({ name: cp.name, time: timeStr });
+                        
+                        if (idx + 1 < checkpoints.length) {
+                            document.getElementById(`checkpoint-${idx + 1}`).classList.add('current');
+                        }
+                    }
+                }
+            });
+        }
+
+        function clearTricks() {
+            cancelBtn.style = '';
+            stayBtn.style = '';
+            cancelBtn.onmouseenter = null;
+            cancelBtn.onmousemove = null;
+            cancelBtn.onmousedown = null;
+            cancelBtn.onclick = () => nextStep();
+            container.style = '';
+            document.querySelectorAll('.fake-btn').forEach(btn => btn.remove());
+            dodgeCount = 0;
+            escapeCount = 0;
+        }
+
+        function applyTrick(trick) {
+            clearTricks();
+            
+            switch(trick) {
+                case 'swap':
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'shrink':
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '10px';
+                    stayBtn.style.padding = '20px 60px';
+                    stayBtn.style.fontSize = '20px';
+                    break;
+                
+                case 'move':
+                    cancelBtn.onmouseenter = () => {
+                        const x = Math.random() * 300 - 150;
+                        const y = Math.random() * 150 - 75;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                    };
+                    break;
+                
+                case 'hide':
+                    cancelBtn.style.opacity = '0.05';
+                    cancelBtn.onmouseenter = () => cancelBtn.style.opacity = '0.2';
+                    cancelBtn.onmouseleave = () => cancelBtn.style.opacity = '0.05';
+                    break;
+                
+                case 'clickEscape':
+                    cancelBtn.onmousedown = (e) => {
+                        if (escapeCount < 2) {
+                            e.preventDefault();
+                            const x = (escapeCount + 1) * 150 * (Math.random() > 0.5 ? 1 : -1);
+                            const y = (escapeCount + 1) * 80 * (Math.random() > 0.5 ? 1 : -1);
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            escapeCount++;
+                            cancelBtn.style.transition = 'transform 0.2s ease-out';
+                            setTimeout(() => cancelBtn.style.transition = 'all 0.3s', 200);
+                            return false;
+                        } else if (escapeCount === 2) {
+                            e.preventDefault();
+                            container.style.flexDirection = container.style.flexDirection === 'row-reverse' ? 'row' : 'row-reverse';
+                            cancelBtn.style.transform = '';
+                            cancelBtn.style.position = 'relative';
+                            cancelBtn.style.background = '#ff0000';
+                            cancelBtn.textContent = '解約する（本物）';
+                            stayBtn.style.background = '#ff4757';
+                            stayBtn.textContent = 'これは解約ボタン';
+                            escapeCount++;
+                            return false;
+                        }
+                    };
+                    break;
+                
+                case 'doubleSwap':
+                    container.style.flexDirection = 'row-reverse';
+                    cancelBtn.style.padding = '8px 15px';
+                    cancelBtn.style.fontSize = '12px';
+                    break;
+                
+                case 'tiny':
+                    cancelBtn.style.padding = '2px 4px';
+                    cancelBtn.style.fontSize = '6px';
+                    stayBtn.style.padding = '30px 100px';
+                    stayBtn.style.fontSize = '28px';
+                    break;
+                
+                case 'dodge':
+                    cancelBtn.onmousemove = (e) => {
+                        if (dodgeCount < 5) {
+                            const x = Math.random() * 400 - 200;
+                            const y = Math.random() * 200 - 100;
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            dodgeCount++;
+                        }
+                    };
+                    break;
+                
+                case 'shake':
+                    cancelBtn.style.animation = 'shake 0.3s infinite';
+                    cancelBtn.style.fontSize = '10px';
+                    break;
+                
+                case 'invisible':
+                    cancelBtn.style.background = '#fefefe';
+                    cancelBtn.style.color = '#fafafa';
+                    cancelBtn.style.border = '1px solid #f9f9f9';
+                    cancelBtn.style.padding = '3px 6px';
+                    cancelBtn.style.fontSize = '7px';
+                    break;
+                
+                case 'spin':
+                    cancelBtn.style.animation = 'spin 2s linear infinite';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'multipleButtons':
+                    for (let i = 0; i < 5; i++) {
+                        const fake = document.createElement('button');
+                        fake.className = 'fake-btn';
+                        fake.textContent = '解約する';
+                        fake.style.left = `${Math.random() * 80}%`;
+                        fake.style.top = `${Math.random() * 50}px`;
+                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        container.appendChild(fake);
+                    }
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '9px';
+                    break;
+                
+                case 'moveAway':
+                    cancelBtn.onmousemove = () => {
+                        const x = Math.random() * 500 - 250;
+                        const y = Math.random() * 300 - 150;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    };
+                    cancelBtn.style.padding = '4px 8px';
+                    cancelBtn.style.fontSize = '8px';
+                    break;
+                
+                case 'fastMove':
+                    cancelBtn.style.animation = 'float 0.5s infinite';
+                    cancelBtn.onmouseenter = () => {
+                        const x = Math.random() * 600 - 300;
+                        const y = Math.random() * 400 - 200;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    };
+                    break;
+                
+                case 'superTiny':
+                    cancelBtn.style.padding = '1px 2px';
+                    cancelBtn.style.fontSize = '4px';
+                    cancelBtn.style.opacity = '0.3';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'hideAndSeek':
+                    let blinkInterval = setInterval(() => {
+                        cancelBtn.style.opacity = cancelBtn.style.opacity === '0.1' ? '1' : '0.1';
+                    }, 600);
+                    cancelBtn.onclick = () => {
+                        clearInterval(blinkInterval);
+                        nextStep();
+                    };
+                    cancelBtn.style.padding = '10px 20px';
+                    cancelBtn.style.fontSize = '14px';
+                    break;
+                
+                case 'crazyMove':
+                    let moveInterval = setInterval(() => {
+                        const x = Math.random() * 400 - 200;
+                        const y = Math.random() * 200 - 100;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                        cancelBtn.style.position = 'absolute';
+                    }, 800);
+                    cancelBtn.onclick = () => {
+                        clearInterval(moveInterval);
+                        nextStep();
+                    };
+                    cancelBtn.style.padding = '8px 15px';
+                    cancelBtn.style.fontSize = '12px';
+                    break;
+                
+                case 'rotate':
+                    cancelBtn.style.animation = 'spin 1s linear infinite';
+                    cancelBtn.style.padding = '4px 7px';
+                    cancelBtn.style.fontSize = '7px';
+                    cancelBtn.style.opacity = '0.4';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'flash':
+                    setInterval(() => {
+                        cancelBtn.style.display = cancelBtn.style.display === 'none' ? 'block' : 'none';
+                    }, 200);
+                    break;
+                
+                case 'chaos':
+                    for (let i = 0; i < 5; i++) {
+                        const fake = document.createElement('button');
+                        fake.className = 'fake-btn';
+                        fake.textContent = '解約';
+                        fake.style.left = `${Math.random() * 90}%`;
+                        fake.style.top = `${Math.random() * 80}px`;
+                        fake.style.padding = '8px 12px';
+                        fake.style.fontSize = '12px';
+                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        container.appendChild(fake);
+                    }
+                    cancelBtn.style.padding = '8px 12px';
+                    cancelBtn.style.fontSize = '12px';
+                    cancelBtn.style.opacity = '0.8';
+                    break;
+                
+                case 'ultimate':
+                    cancelBtn.onmousemove = (e) => {
+                        if (dodgeCount < 3) {
+                            const x = Math.random() * 400 - 200;
+                            const y = Math.random() * 200 - 100;
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            dodgeCount++;
+                        } else {
+                            cancelBtn.style.padding = '10px 20px';
+                            cancelBtn.style.fontSize = '14px';
+                            cancelBtn.style.opacity = '1';
+                            cancelBtn.style.background = '#ff4757';
+                            cancelBtn.onmousemove = null;
+                        }
+                    };
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '10px';
+                    cancelBtn.style.opacity = '0.6';
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+            }
+        }
+
+        function nextStep() {
+            if (step >= 21) {
+                finishGame();
+                return;
+            }
+
+            checkCheckpoint();
+
+            const currentStep = steps[step];
+            document.getElementById('emoji').textContent = currentStep.emoji;
+            document.getElementById('title').textContent = currentStep.title;
+            document.getElementById('message').textContent = currentStep.message;
+            
+            if (currentStep.discount) {
+                document.getElementById('extra-content').innerHTML = 
+                    `<div class="discount">${currentStep.discount}</div>`;
+            } else {
+                document.getElementById('extra-content').innerHTML = '';
+            }
+
+            applyTrick(currentStep.trick);
+
+            step++;
+            updateStats();
+            document.getElementById('progress').textContent = `ステップ ${step}/21`;
+        }
+
+        function finishGame() {
+            clearInterval(timerInterval);
+            clearTricks();
+            
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            
+            const finalTime = Date.now() - startTime;
+            const minutes = Math.floor(finalTime / 60000);
+            const seconds = Math.floor((finalTime % 60000) / 1000);
+            const ms = finalTime % 1000;
+            const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+            
+            document.getElementById('finalTime').textContent = timeStr;
+            
+            // ランク判定
+            let rank = '';
+            let message = '';
+            if (finalTime < 60000) {
+                rank = '🏆 SS RANK';
+                message = '神業！世界記録級のタイムです！';
+            } else if (finalTime < 90000) {
+                rank = '🥇 S RANK';
+                message = '素晴らしい！完璧なプレイです！';
+            } else if (finalTime < 120000) {
+                rank = '🥈 A RANK';
+                message = 'すごい！目標タイムクリア！';
+            } else if (finalTime < 180000) {
+                rank = '🥉 B RANK';
+                message = 'いい感じ！もう少しで目標達成！';
+            } else if (finalTime < 240000) {
+                rank = '📝 C RANK';
+                message = 'クリアおめでとう！練習あるのみ！';
+            } else {
+                rank = '🐢 D RANK';
+                message = 'クリアできました！次はもっと早く！';
+            }
+            
+            if (missCount > 10) {
+                message += `<br><small>ミスクリック: ${missCount}回 (落ち着いてプレイしよう！)</small>`;
+            } else if (missCount > 5) {
+                message += `<br><small>ミスクリック: ${missCount}回</small>`;
+            } else if (missCount === 0) {
+                message += `<br><small>✨ノーミスクリア！完璧です！</small>`;
+            }
+            
+            document.getElementById('rank').textContent = rank;
+            document.getElementById('resultMessage').innerHTML = message;
+        }
+    </script>
+</body>
+</html>

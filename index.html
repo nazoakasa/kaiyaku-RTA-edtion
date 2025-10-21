@@ -337,4 +337,188 @@
             { emoji: '🥺', title: 'お願いします...', message: 'あなたがいなくなったら、私たちはとても寂しいです...', trick: 'tiny' },
             { emoji: '💰', title: '最終オファー！', message: '3ヶ月間完全無料でご利用いただけます！', discount: '3ヶ月無料', trick: 'dodge' },
             { emoji: '🆘', title: '緊急事態！', message: 'あなたのアカウントには大切なデータが保存されています。本当に削除しますか？', trick: 'shake' },
-            { emoji: '🌟', title: '特別VIP待
+            { emoji: '🌟', title: '特別VIP待遇', message: '今すぐVIP会員になって、すべての機能を永久に無料でご利用ください！', discount: 'VIP永久無料', trick: 'invisible' },
+            { emoji: '💔', title: '最後のお願い', message: 'それでも本当に解約されますか...？', trick: 'spin' },
+            { emoji: '🎯', title: '超限定オファー', message: '今だけ年間プラン90%OFF！', discount: '90% OFF', trick: 'multipleButtons' },
+            { emoji: '😱', title: 'ちょっと待って！', message: 'まだ伝えていない特典があります！', trick: 'moveAway' },
+            { emoji: '🎪', title: '驚きの特典', message: '全機能無制限プレミアム！', discount: '無制限プラン', trick: 'fastMove' },
+            { emoji: '🚀', title: '信じられない！', message: 'これ以上の条件はありません！', trick: 'superTiny' },
+            { emoji: '💝', title: '感謝の気持ち', message: 'あなたは特別なお客様です', trick: 'hideAndSeek' },
+            { emoji: '🎉', title: 'ラストチャンス', message: '人生最後のチャンスかも...', discount: '全部無料', trick: 'crazyMove' },
+            { emoji: '😇', title: '神オファー', message: 'もはや無料を超えた何か', trick: 'rotate' },
+            { emoji: '🌈', title: '奇跡の提案', message: '使えば使うほどポイント還元！', trick: 'flash' },
+            { emoji: '⭐', title: '最終形態', message: 'これが最後です...本当に...', trick: 'chaos' },
+            { emoji: '💫', title: '究極の選択', message: '後悔しませんか？', trick: 'ultimate' }
+        ];
+
+        const cancelBtn = document.getElementById('cancelBtn');
+        const stayBtn = document.getElementById('stayBtn');
+        const container = document.getElementById('btnContainer');
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 10);
+            initCheckpoints();
+            updateStats();
+        }
+
+        function initCheckpoints() {
+            const checkpointDiv = document.getElementById('checkpoints');
+            checkpoints.forEach((cp, idx) => {
+                const div = document.createElement('div');
+                div.className = 'checkpoint';
+                div.id = `checkpoint-${idx}`;
+                div.innerHTML = `
+                    <span class="checkpoint-name">${cp.name}</span>
+                    <span class="checkpoint-time">--:--.---</span>
+                `;
+                checkpointDiv.appendChild(div);
+            });
+            document.getElementById('checkpoint-0').classList.add('current');
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const ms = elapsed % 1000;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+        }
+
+        function updateStats() {
+            document.getElementById('currentStep').textContent = `${step}/21`;
+            document.getElementById('missCount').textContent = missCount;
+        }
+
+        function recordMiss() {
+            missCount++;
+            updateStats();
+        }
+
+        function checkCheckpoint() {
+            checkpoints.forEach((cp, idx) => {
+                if (cp.steps.includes(step)) {
+                    const cpDiv = document.getElementById(`checkpoint-${idx}`);
+                    if (!cpDiv.classList.contains('completed')) {
+                        cpDiv.classList.remove('current');
+                        cpDiv.classList.add('completed');
+                        const elapsed = Date.now() - startTime;
+                        const minutes = Math.floor(elapsed / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                        const ms = elapsed % 1000;
+                        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+                        cpDiv.querySelector('.checkpoint-time').textContent = timeStr;
+                        checkpointTimes.push({ name: cp.name, time: timeStr });
+                        
+                        if (idx + 1 < checkpoints.length) {
+                            document.getElementById(`checkpoint-${idx + 1}`).classList.add('current');
+                        }
+                    }
+                }
+            });
+        }
+
+        function clearTricks() {
+            cancelBtn.style = '';
+            stayBtn.style = '';
+            cancelBtn.onmouseenter = null;
+            cancelBtn.onmousemove = null;
+            cancelBtn.onmousedown = null;
+            cancelBtn.onclick = () => nextStep();
+            container.style = '';
+            document.querySelectorAll('.fake-btn').forEach(btn => btn.remove());
+            dodgeCount = 0;
+            escapeCount = 0;
+        }
+
+        function applyTrick(trick) {
+            clearTricks();
+            
+            switch(trick) {
+                case 'swap':
+                    container.style.flexDirection = 'row-reverse';
+                    break;
+                
+                case 'shrink':
+                    cancelBtn.style.padding = '5px 10px';
+                    cancelBtn.style.fontSize = '10px';
+                    stayBtn.style.padding = '20px 60px';
+                    stayBtn.style.fontSize = '20px';
+                    break;
+                
+                case 'move':
+                    cancelBtn.onmouseenter = () => {
+                        const x = Math.random() * 300 - 150;
+                        const y = Math.random() * 150 - 75;
+                        cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                    };
+                    break;
+                
+                case 'hide':
+                    cancelBtn.style.opacity = '0.05';
+                    cancelBtn.onmouseenter = () => cancelBtn.style.opacity = '0.2';
+                    cancelBtn.onmouseleave = () => cancelBtn.style.opacity = '0.05';
+                    break;
+                
+                case 'clickEscape':
+                    cancelBtn.onmousedown = (e) => {
+                        if (escapeCount < 2) {
+                            e.preventDefault();
+                            const x = (escapeCount + 1) * 150 * (Math.random() > 0.5 ? 1 : -1);
+                            const y = (escapeCount + 1) * 80 * (Math.random() > 0.5 ? 1 : -1);
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            escapeCount++;
+                            cancelBtn.style.transition = 'transform 0.2s ease-out';
+                            setTimeout(() => cancelBtn.style.transition = 'all 0.3s', 200);
+                            return false;
+                        } else if (escapeCount === 2) {
+                            e.preventDefault();
+                            container.style.flexDirection = container.style.flexDirection === 'row-reverse' ? 'row' : 'row-reverse';
+                            cancelBtn.style.transform = '';
+                            cancelBtn.style.position = 'relative';
+                            cancelBtn.style.background = '#ff0000';
+                            cancelBtn.textContent = '解約する（本物）';
+                            stayBtn.style.background = '#ff4757';
+                            stayBtn.textContent = 'これは解約ボタン';
+                            escapeCount++;
+                            return false;
+                        }
+                    };
+                    break;
+                
+                case 'doubleSwap':
+                    container.style.flexDirection = 'row-reverse';
+                    cancelBtn.style.padding = '8px 15px';
+                    cancelBtn.style.fontSize = '12px';
+                    break;
+                
+                case 'tiny':
+                    cancelBtn.style.padding = '2px 4px';
+                    cancelBtn.style.fontSize = '6px';
+                    stayBtn.style.padding = '30px 100px';
+                    stayBtn.style.fontSize = '28px';
+                    break;
+                
+                case 'dodge':
+                    cancelBtn.onmousemove = (e) => {
+                        if (dodgeCount < 5) {
+                            const x = Math.random() * 400 - 200;
+                            const y = Math.random() * 200 - 100;
+                            cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
+                            cancelBtn.style.position = 'absolute';
+                            dodgeCount++;
+                        }
+                    };
+                    break;
+                
+                case 'shake':
+                    cancelBtn.style.animation = 'shake 0.3s infinite';
+                    cancelBtn.style.fontSize = '10px';
+                    break;
+                
+                case 'invisible':
+                  

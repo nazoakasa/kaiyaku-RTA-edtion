@@ -18,7 +18,6 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            overflow: hidden;
         }
         .game-container {
             display: flex;
@@ -34,6 +33,8 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .sidebar {
             background: rgba(255,255,255,0.95);
@@ -41,6 +42,8 @@
             padding: 30px;
             width: 300px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .timer {
             font-size: 48px;
@@ -171,9 +174,49 @@
             font-size: 24px;
             font-weight: bold;
             color: #333;
-            animation: pulse 1s infinite;
+            animation: pulseAnim 1s infinite;
         }
-        @keyframes pulse {
+        .people-list {
+            background: #ffe5e5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            border: 2px solid #ff4757;
+        }
+        .people-list h3 {
+            color: #ff4757;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 20px;
+        }
+        .person-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .person-emoji {
+            font-size: 24px;
+        }
+        .person-info {
+            flex: 1;
+        }
+        .person-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .person-reward {
+            color: #ff4757;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        @keyframes pulseAnim {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
@@ -259,7 +302,7 @@
             <div class="stats">
                 <div class="stat-item">
                     <span class="stat-label">現在ステップ</span>
-                    <span class="stat-value" id="currentStep">0/21</span>
+                    <span class="stat-value" id="currentStep">0/22</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">ミスクリック</span>
@@ -277,7 +320,7 @@
                 <div class="emoji">🎮</div>
                 <h1>解約阻止ゲーム - RTA Edition</h1>
                 <div class="message">
-                    21段階の解約阻止を突破してタイムを競おう！<br>
+                    22段階の解約阻止を突破してタイムを競おう！<br>
                     チェックポイント毎にラップタイムを記録します。<br><br>
                     <strong>目標タイム: 2分以内</strong>
                 </div>
@@ -295,7 +338,7 @@
                     <button class="stay-btn" id="stayBtn" onclick="recordMiss()">やっぱり続ける</button>
                     <button class="cancel-btn" id="cancelBtn" onclick="nextStep()">解約する</button>
                 </div>
-                <div class="progress" id="progress">ステップ 1/21</div>
+                <div class="progress" id="progress">ステップ 1/22</div>
             </div>
 
             <div id="resultScreen" class="result-screen" style="display: none;">
@@ -317,19 +360,14 @@
         let timerInterval = null;
         let missCount = 0;
         let checkpointTimes = [];
-        let sessionToken = null;
-        let serverStartTime = null;
-        
-        const API_URL = 'https://your-app.onrender.com'; // Renderのデプロイ後のURLに変更
-        const SECRET = 'change-this-in-production'; // サーバーと同じシークレット
         
         const checkpoints = [
             { name: 'Tutorial', steps: [1, 2, 3] },
-            { name: 'Easy', steps: [4, 5, 6, 7] },
-            { name: 'Normal', steps: [8, 9, 10, 11] },
-            { name: 'Hard', steps: [12, 13, 14, 15] },
-            { name: 'Expert', steps: [16, 17, 18] },
-            { name: 'Master', steps: [19, 20, 21] }
+            { name: 'Easy', steps: [4, 5, 6, 7, 8] },
+            { name: 'Normal', steps: [9, 10, 11, 12] },
+            { name: 'Hard', steps: [13, 14, 15, 16] },
+            { name: 'Expert', steps: [17, 18, 19] },
+            { name: 'Master', steps: [20, 21, 22] }
         ];
 
         const steps = [
@@ -339,6 +377,7 @@
             { emoji: '😭', title: 'まだ早いです！', message: '私たちのサービスには、まだ使っていない機能がたくさんあります！', trick: 'hide' },
             { emoji: '😈', title: '最凶トラップ', message: 'クリックできるかな...？', trick: 'clickEscape' },
             { emoji: '💎', title: '限定特典進呈', message: 'プレミアム会員に無料アップグレードいたします！', discount: 'プレミアム無料', trick: 'doubleSwap' },
+            { emoji: '👨‍👩‍👧‍👦', title: '周りの人のことも...', message: 'あなたが解約すると、関係者全員の報酬がなくなります...', showPeople: true, trick: 'tiny' },
             { emoji: '🥺', title: 'お願いします...', message: 'あなたがいなくなったら、私たちはとても寂しいです...', trick: 'tiny' },
             { emoji: '💰', title: '最終オファー！', message: '3ヶ月間完全無料でご利用いただけます！', discount: '3ヶ月無料', trick: 'dodge' },
             { emoji: '🆘', title: '緊急事態！', message: 'あなたのアカウントには大切なデータが保存されています。本当に削除しますか？', trick: 'shake' },
@@ -366,11 +405,21 @@
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 10);
             initCheckpoints();
-            updateStats();
+            applyTrick(steps[0].trick);
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const milliseconds = elapsed % 1000;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
         }
 
         function initCheckpoints() {
-            const checkpointDiv = document.getElementById('checkpoints');
+            const checkpointsDiv = document.getElementById('checkpoints');
+            checkpointsDiv.innerHTML = '';
             checkpoints.forEach((cp, idx) => {
                 const div = document.createElement('div');
                 div.className = 'checkpoint';
@@ -379,51 +428,41 @@
                     <span class="checkpoint-name">${cp.name}</span>
                     <span class="checkpoint-time">--:--.---</span>
                 `;
-                checkpointDiv.appendChild(div);
+                checkpointsDiv.appendChild(div);
             });
             document.getElementById('checkpoint-0').classList.add('current');
         }
 
-        function updateTimer() {
-            const elapsed = Date.now() - startTime;
-            const minutes = Math.floor(elapsed / 60000);
-            const seconds = Math.floor((elapsed % 60000) / 1000);
-            const ms = elapsed % 1000;
-            document.getElementById('timer').textContent = 
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
-        }
-
-        function updateStats() {
-            document.getElementById('currentStep').textContent = `${step}/21`;
-            document.getElementById('missCount').textContent = missCount;
+        function updateCheckpoint() {
+            const currentCheckpointIdx = checkpoints.findIndex(cp => 
+                cp.steps.includes(step)
+            );
+            
+            if (currentCheckpointIdx !== -1) {
+                const prevCheckpointIdx = checkpoints.findIndex(cp => 
+                    cp.steps.includes(step - 1)
+                );
+                
+                if (prevCheckpointIdx !== currentCheckpointIdx && prevCheckpointIdx !== -1) {
+                    const elapsed = Date.now() - startTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    const milliseconds = elapsed % 1000;
+                    const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+                    
+                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).classList.remove('current');
+                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).classList.add('completed');
+                    document.getElementById(`checkpoint-${prevCheckpointIdx}`).querySelector('.checkpoint-time').textContent = timeStr;
+                    checkpointTimes.push(elapsed);
+                }
+                
+                document.getElementById(`checkpoint-${currentCheckpointIdx}`).classList.add('current');
+            }
         }
 
         function recordMiss() {
             missCount++;
-            updateStats();
-        }
-
-        function checkCheckpoint() {
-            checkpoints.forEach((cp, idx) => {
-                if (cp.steps.includes(step)) {
-                    const cpDiv = document.getElementById(`checkpoint-${idx}`);
-                    if (!cpDiv.classList.contains('completed')) {
-                        cpDiv.classList.remove('current');
-                        cpDiv.classList.add('completed');
-                        const elapsed = Date.now() - startTime;
-                        const minutes = Math.floor(elapsed / 60000);
-                        const seconds = Math.floor((elapsed % 60000) / 1000);
-                        const ms = elapsed % 1000;
-                        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
-                        cpDiv.querySelector('.checkpoint-time').textContent = timeStr;
-                        checkpointTimes.push({ name: cp.name, time: timeStr });
-                        
-                        if (idx + 1 < checkpoints.length) {
-                            document.getElementById(`checkpoint-${idx + 1}`).classList.add('current');
-                        }
-                    }
-                }
-            });
+            document.getElementById('missCount').textContent = missCount;
         }
 
         function clearTricks() {
@@ -477,8 +516,12 @@
                             cancelBtn.style.transform = `translate(${x}px, ${y}px)`;
                             cancelBtn.style.position = 'absolute';
                             escapeCount++;
+                            
                             cancelBtn.style.transition = 'transform 0.2s ease-out';
-                            setTimeout(() => cancelBtn.style.transition = 'all 0.3s', 200);
+                            setTimeout(() => {
+                                cancelBtn.style.transition = 'all 0.3s';
+                            }, 200);
+                            
                             return false;
                         } else if (escapeCount === 2) {
                             e.preventDefault();
@@ -493,6 +536,7 @@
                             return false;
                         }
                     };
+                    cancelBtn.style.cursor = 'pointer';
                     break;
                 
                 case 'doubleSwap':
@@ -545,7 +589,7 @@
                         fake.textContent = '解約する';
                         fake.style.left = `${Math.random() * 80}%`;
                         fake.style.top = `${Math.random() * 50}px`;
-                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        fake.onclick = () => fake.remove();
                         container.appendChild(fake);
                     }
                     cancelBtn.style.padding = '5px 10px';
@@ -630,7 +674,7 @@
                         fake.style.top = `${Math.random() * 80}px`;
                         fake.style.padding = '8px 12px';
                         fake.style.fontSize = '12px';
-                        fake.onclick = () => { fake.remove(); recordMiss(); };
+                        fake.onclick = () => fake.remove();
                         container.appendChild(fake);
                     }
                     cancelBtn.style.padding = '8px 12px';
@@ -647,97 +691,3 @@
                             cancelBtn.style.position = 'absolute';
                             dodgeCount++;
                         } else {
-                            cancelBtn.style.padding = '10px 20px';
-                            cancelBtn.style.fontSize = '14px';
-                            cancelBtn.style.opacity = '1';
-                            cancelBtn.style.background = '#ff4757';
-                            cancelBtn.onmousemove = null;
-                        }
-                    };
-                    cancelBtn.style.padding = '5px 10px';
-                    cancelBtn.style.fontSize = '10px';
-                    cancelBtn.style.opacity = '0.6';
-                    container.style.flexDirection = 'row-reverse';
-                    break;
-            }
-        }
-
-        function nextStep() {
-            if (step >= 21) {
-                finishGame();
-                return;
-            }
-
-            checkCheckpoint();
-
-            const currentStep = steps[step];
-            document.getElementById('emoji').textContent = currentStep.emoji;
-            document.getElementById('title').textContent = currentStep.title;
-            document.getElementById('message').textContent = currentStep.message;
-            
-            if (currentStep.discount) {
-                document.getElementById('extra-content').innerHTML = 
-                    `<div class="discount">${currentStep.discount}</div>`;
-            } else {
-                document.getElementById('extra-content').innerHTML = '';
-            }
-
-            applyTrick(currentStep.trick);
-
-            step++;
-            updateStats();
-            document.getElementById('progress').textContent = `ステップ ${step}/21`;
-        }
-
-        function finishGame() {
-            clearInterval(timerInterval);
-            clearTricks();
-            
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('resultScreen').style.display = 'block';
-            
-            const finalTime = Date.now() - startTime;
-            const minutes = Math.floor(finalTime / 60000);
-            const seconds = Math.floor((finalTime % 60000) / 1000);
-            const ms = finalTime % 1000;
-            const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
-            
-            document.getElementById('finalTime').textContent = timeStr;
-            
-            // ランク判定
-            let rank = '';
-            let message = '';
-            if (finalTime < 60000) {
-                rank = '🏆 SS RANK';
-                message = '神業！世界記録級のタイムです！';
-            } else if (finalTime < 90000) {
-                rank = '🥇 S RANK';
-                message = '素晴らしい！完璧なプレイです！';
-            } else if (finalTime < 120000) {
-                rank = '🥈 A RANK';
-                message = 'すごい！目標タイムクリア！';
-            } else if (finalTime < 180000) {
-                rank = '🥉 B RANK';
-                message = 'いい感じ！もう少しで目標達成！';
-            } else if (finalTime < 240000) {
-                rank = '📝 C RANK';
-                message = 'クリアおめでとう！練習あるのみ！';
-            } else {
-                rank = '🐢 D RANK';
-                message = 'クリアできました！次はもっと早く！';
-            }
-            
-            if (missCount > 10) {
-                message += `<br><small>ミスクリック: ${missCount}回 (落ち着いてプレイしよう！)</small>`;
-            } else if (missCount > 5) {
-                message += `<br><small>ミスクリック: ${missCount}回</small>`;
-            } else if (missCount === 0) {
-                message += `<br><small>✨ノーミスクリア！完璧です！</small>`;
-            }
-            
-            document.getElementById('rank').textContent = rank;
-            document.getElementById('resultMessage').innerHTML = message;
-        }
-    </script>
-</body>
-</html>
